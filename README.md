@@ -144,22 +144,4 @@ AfterLife-Protocol/
 - **Business Continuity**: Transfer business-related crypto assets
 - **Charity Donations**: Automated charitable giving after passing
 
-## 📄 License
 
-[MIT](LICENSE)
-
-## 📞 Contact
-
-For questions or feedback, please open an issue on this repository or reach out at [Jaisinghtomar9211@gmail.com](mailto:Jaisinghtomar9211@gmail.com).
-
-## 🗺️ Roadmap
-
-- [ ] Multi-token support (ERC-20 tokens)
-- [ ] Mobile application
-- [ ] Integration with legal frameworks
-- [ ] Multi-signature support
-- [ ] Cross-chain compatibility
-
----
-
-**Built with ❤️ for the future of digital inheritance**
