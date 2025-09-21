@@ -6,7 +6,7 @@ AfterLife-Protocol is a revolutionary blockchain-based solution that enables sec
 
 ## Live Demo
 
-[Access the AfterLife-Protocol platform](https://afterlife-protocol.vercel.app/) (Deployed on Vercel — works with the Sepolia testnet)
+
 
 ## 🌟 Key Features
 
@@ -143,5 +143,6 @@ AfterLife-Protocol/
 - **Family Planning**: Secure financial future for family members
 - **Business Continuity**: Transfer business-related crypto assets
 - **Charity Donations**: Automated charitable giving after passing
+
 
 
