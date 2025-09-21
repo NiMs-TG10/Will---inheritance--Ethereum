@@ -1,0 +1,19 @@
+# --- frontend
+frontend/node_modules/
+frontend/.env
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+frontend/.eslintcache
+
+# --- Foundry (smartContract/)
+smartContract/out/
+smartContract/lib/
+smartContract/cache/
+smartContract/.gas-snapshot
+
+# --- General
+.DS_Store
+*.log
+*.tmp
+.env
