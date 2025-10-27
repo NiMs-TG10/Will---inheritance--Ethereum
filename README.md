@@ -41,7 +41,7 @@ AfterLife-Protocol/
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/jai123singh/AfterLife-Protocol.git
+   git clone 
    cd AfterLife-Protocol
    ```
 
@@ -143,6 +143,7 @@ AfterLife-Protocol/
 - **Family Planning**: Secure financial future for family members
 - **Business Continuity**: Transfer business-related crypto assets
 - **Charity Donations**: Automated charitable giving after passing
+
 
 
 
