@@ -1,5 +1,5 @@
+
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { sepolia } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RPC_URL, CONTRACT_ADDRESS, CONTRACT_ABI } from "./config";
 import { Toaster } from "react-hot-toast";
@@ -11,13 +11,31 @@ import NewUserSetup from "./pages/NewUserSetup";
 import LoadingScreen from "./components/LoadingScreen";
 import { injected, metaMask, coinbaseWallet } from "wagmi/connectors";
 import toast from "react-hot-toast";
+import { defineChain } from "viem";
+
+// Define local Anvil chain (foundry default)
+const localAnvilChain = defineChain({
+  id: 31337,
+  name: "Local Anvil",
+  nativeCurrency: {
+    name: "Ether",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ["http://localhost:8545"],
+    },
+  },
+});
 
 const config = createConfig({
-  chains: [sepolia],
+  chains: [localAnvilChain],
   connectors: [injected()],
   transports: {
-    [sepolia.id]: http(RPC_URL),
+    [localAnvilChain.id]: http(RPC_URL),
   },
+  ssr: false,
 });
 
 const queryClient = new QueryClient();
@@ -31,7 +49,7 @@ function AppContent() {
   const { disconnect } = useDisconnect();
   const { address } = useAccount();
 
-  const { data, isError, refetch } = useReadContracts({
+  const { data, isError, isLoading, refetch } = useReadContracts({
     contracts: address
       ? [
           {
@@ -89,36 +107,17 @@ function AppContent() {
   const processUserData = async () => {
     setIsFetchingData(true);
     try {
-      const freshData = await refetch();
-      if (!freshData.data || freshData.data.length === 0) {
-        throw new Error("Failed to fetch user data");
-      }
-
-      // Check if isNewUser call failed
-      if (freshData.data[0].status === "failure") {
-        throw new Error("Failed to check user status");
-      }
-
-      const isNewUserResult = freshData.data[0].result;
-      setIsNewUser(isNewUserResult);
-
-      if (!isNewUserResult) {
-        // For existing users, check if getName call succeeded
-        if (freshData.data[1].status === "failure") {
-          throw new Error("Failed to fetch user name");
+      // Ensure data is available, refetch if needed
+      if (!data || data.length === 0) {
+        const freshData = await refetch();
+        if (!freshData.data || freshData.data.length === 0) {
+          throw new Error("Failed to fetch user data");
         }
-
-        // Other getter functions may return empty arrays, which is fine
-        setUserData({
-          name: freshData.data[1].result,
-          isActive: freshData.data[2].result ?? false,
-          balance: freshData.data[3].result ?? BigInt(0),
-          nominees: freshData.data[4].result ?? [],
-          lastCheckIn: freshData.data[5].result ?? BigInt(0),
-          inactivityPeriod: freshData.data[6].result ?? BigInt(0),
-          inheritances: freshData.data[7].result ?? [],
-        });
+        processData(freshData.data);
+      } else {
+        processData(data);
       }
+      
       return true;
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -129,6 +128,34 @@ function AppContent() {
       return false;
     } finally {
       setIsFetchingData(false);
+    }
+  };
+
+  const processData = (contractData) => {
+    // Check if isNewUser call failed
+    if (contractData[0].status === "failure") {
+      throw new Error("Failed to check user status");
+    }
+
+    const isNewUserResult = contractData[0].result;
+    setIsNewUser(isNewUserResult);
+
+    if (!isNewUserResult) {
+      // For existing users, check if getName call succeeded
+      if (contractData[1].status === "failure") {
+        throw new Error("Failed to fetch user name");
+      }
+
+      // Other getter functions may return empty arrays, which is fine
+      setUserData({
+        name: contractData[1].result,
+        isActive: contractData[2].result ?? false,
+        balance: contractData[3].result ?? BigInt(0),
+        nominees: contractData[4].result ?? [],
+        lastCheckIn: contractData[5].result ?? BigInt(0),
+        inactivityPeriod: contractData[6].result ?? BigInt(0),
+        inheritances: contractData[7].result ?? [],
+      });
     }
   };
 
@@ -194,10 +221,10 @@ function AppContent() {
 
   // Auto-connect if address is available and data is loaded
   useEffect(() => {
-    if (address && !isConnected && data) {
+    if (address && !isConnected && data && data.length > 0 && !isLoading) {
       handleConnect(address);
     }
-  }, [address, data]);
+  }, [address, data, isConnected, isLoading]);
 
   // Handle contract read errors
   useEffect(() => {
@@ -243,7 +270,7 @@ function AppContent() {
         }}
       />
       {!isConnected ? (
-        <WelcomePage onConnect={handleConnect} />
+        <WelcomePage />
       ) : isNewUser ? (
         <NewUserSetup
           onComplete={async () => {

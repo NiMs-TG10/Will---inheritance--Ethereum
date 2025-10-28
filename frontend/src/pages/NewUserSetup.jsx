@@ -1,19 +1,43 @@
 import { useState, useEffect } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from "wagmi";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../config";
 import toast from "react-hot-toast";
 
 function extractMainError(error) {
   if (!error) return null;
-  if (error.message?.includes("User rejected the request")) {
+  
+  // Log the full error for debugging
+  console.error("Transaction error:", error);
+  
+  if (error.message?.includes("User rejected the request") || 
+      error.message?.includes("User denied") ||
+      error.message?.includes("rejected")) {
     return "Transaction rejected by user.";
   }
-  return "Transaction failed. Please try again.";
+  
+  if (error.message?.includes("insufficient funds")) {
+    return "Insufficient funds for gas. Please add ETH to your wallet.";
+  }
+  
+  if (error.message?.includes("gas required exceeds allowance")) {
+    return "Gas estimation failed. Please try again.";
+  }
+  
+  if (error.message?.includes("network")) {
+    return "Network error. Please check your connection.";
+  }
+  
+  // Return a more descriptive error
+  const errorMessage = error.message || error.toString();
+  return errorMessage || "Transaction failed. Please try again.";
 }
 
 const NewUserSetup = ({ onComplete, onDisconnect }) => {
   const [name, setName] = useState("");
   const [transactionStatus, setTransactionStatus] = useState("");
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  
   const {
     data: hash,
     error: writeError,
@@ -35,14 +59,41 @@ const NewUserSetup = ({ onComplete, onDisconnect }) => {
       return;
     }
 
+    // Check if user is on the correct network (Local Anvil - 31337)
+    if (chainId !== 31337) {
+      toast.error(
+        `Please switch to Local Anvil network (Chain ID: 31337). You are currently on Chain ID: ${chainId}`,
+        { position: "top-center", duration: 5000 }
+      );
+      
+      // Try to switch to the correct network
+      try {
+        await switchChain({ chainId: 31337 });
+      } catch (err) {
+        console.error("Failed to switch network:", err);
+        toast.error(
+          "Please manually add the Local Anvil network to MetaMask and switch to it.",
+          { position: "top-center", duration: 6000 }
+        );
+      }
+      return;
+    }
+
     try {
-      writeContract({
+      console.log("Attempting to write contract with:", { 
+        address: CONTRACT_ADDRESS, 
+        functionName: "resetName", 
+        args: [name.trim()] 
+      });
+      
+      await writeContract({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: "resetName",
         args: [name.trim()],
       });
     } catch (err) {
+      console.error("Failed to write contract:", err);
       toast.error("Failed to initiate transaction", { position: "top-center" });
     }
   };
@@ -99,6 +150,19 @@ const NewUserSetup = ({ onComplete, onDisconnect }) => {
         <h2 className="text-2xl font-bold mb-6 text-center">
           Welcome to AfterLife Protocol
         </h2>
+        
+        {/* Network Status Indicator */}
+        <div className={`mb-4 p-3 rounded-lg text-center text-sm ${
+          chainId === 31337 
+            ? 'bg-green-900/30 border border-green-700/50 text-green-400' 
+            : 'bg-red-900/30 border border-red-700/50 text-red-400'
+        }`}>
+          {chainId === 31337 ? (
+            <span>✓ Connected to Local Anvil Network</span>
+          ) : (
+            <span>⚠ Please switch to Local Anvil Network (Chain ID: 31337)</span>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

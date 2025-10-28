@@ -2,35 +2,27 @@ import { useConnect, useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import WalletConnectModal from "../components/modals/WalletConnectModal";
-import LoadingScreen from "../components/LoadingScreen";
 import { FaGithub, FaTwitter } from "react-icons/fa";
 
-const WelcomePage = ({ onConnect }) => {
+const WelcomePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const { address } = useAccount();
-  const { error } = useConnect({
-    onSuccess: () => {
+  
+  // Auto-detect when wallet connects
+  useEffect(() => {
+    if (address) {
       setIsModalOpen(false);
-      setIsLoading(true);
-      // Give a small delay to ensure the connection is properly established
-      setTimeout(() => {
-        onConnect(address);
-      }, 1000);
-    },
-  });
+    }
+  }, [address]);
+
+  const { error } = useConnect();
 
   useEffect(() => {
     if (error) {
       toast.error("Failed to connect wallet. Please try again.");
-      setIsLoading(false);
       setIsModalOpen(false);
     }
   }, [error]);
-
-  if (isLoading) {
-    return <LoadingScreen message="Checking wallet status..." />;
-  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -47,9 +39,8 @@ const WelcomePage = ({ onConnect }) => {
             ones. The future of inheritance, powered by blockchain.
           </p>
           <div className="flex flex-col items-center space-y-4">
-            <p className="text-sm text-yellow-400 font-medium">
-              ⚠️ This dApp works only on the Sepolia Testnet. Please switch your
-              network before connecting.
+            <p className="text-sm text-green-400 font-medium">
+              🔗 Connected to Local Anvil Network (Chain ID: 31337)
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -118,7 +109,7 @@ const WelcomePage = ({ onConnect }) => {
               </span>
               <div className="flex space-x-4">
                 <a
-                  href="https://github.com/jai123singh/AfterLife-Protocol"
+                  href="https://github.com/NiMs-TG10/Will---inheritance--Ethereum"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center justify-center w-12 h-12 bg-gray-800/50 hover:bg-primary/20 rounded-full transition-all duration-300 transform hover:scale-110 border border-gray-700/30 hover:border-primary/50"
@@ -127,7 +118,7 @@ const WelcomePage = ({ onConnect }) => {
                   <FaGithub className="text-xl text-gray-400 group-hover:text-primary transition-colors duration-300" />
                 </a>
                 <a
-                  href="https://x.com/JaiSingh9122"
+                  href=""
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center justify-center w-12 h-12 bg-gray-800/50 hover:bg-secondary/20 rounded-full transition-all duration-300 transform hover:scale-110 border border-gray-700/30 hover:border-secondary/50"
